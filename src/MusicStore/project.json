@@ -16,15 +16,13 @@
   "compile": [
     "../../shared/**/*.cs"
   ],
-  "publishOptions": {
-    "include": [
+  "content": [
       "Areas",
       "Views",
       "wwwroot",
       "config.json",
       "web.config"
-    ]
-  },
+  ],
   "dependencies": {
     "Microsoft.AspNetCore.Authentication.Cookies": "1.0.0-*",
     "Microsoft.AspNetCore.Authentication.Facebook": "1.0.0-*",
