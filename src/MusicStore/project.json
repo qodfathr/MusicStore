@@ -4,10 +4,10 @@
   ],
   "description": "Music store application on ASP.NET 5",
   "version": "1.0.0-*",
-  "buildOptions": {
+  "compilationOptions": {
     "compile": {
       "include": [
-        "../../shared/**/*.cs" 
+        "../../shared/**/*.cs"
       ]
     },
     "copyToOutput": {
@@ -19,6 +19,7 @@
         "web.config"
       ]
     },
+    "debugType": "portable",
     "define": [
       "DEMO",
       "TESTING"
