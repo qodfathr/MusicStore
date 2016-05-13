@@ -4,21 +4,15 @@
   ],
   "description": "Music store application on ASP.NET 5",
   "version": "1.0.0-*",
+  "compile": "../../shared/**/*.cs",
+  "content": [
+    "Areas",
+    "Views",
+    "wwwroot",
+    "config.json",
+    "web.config"
+  ],
   "compilationOptions": {
-    "compile": {
-      "include": [
-        "../../shared/**/*.cs"
-      ]
-    },
-    "copyToOutput": {
-      "include": [
-        "Areas",
-        "Views",
-        "wwwroot",
-        "config.json",
-        "web.config"
-      ]
-    },
     "debugType": "portable",
     "define": [
       "DEMO",
@@ -27,15 +21,6 @@
     "emitEntryPoint": true,
     "preserveCompilationContext": true,
     "warningsAsErrors": true
-  },
-  "publishOptions": {
-    "include": [
-      "Areas",
-      "Views",
-      "wwwroot",
-      "config.json",
-      "web.config"
-    ]
   },
   "dependencies": {
     "Microsoft.AspNetCore.Authentication.Cookies": "1.0.0-*",

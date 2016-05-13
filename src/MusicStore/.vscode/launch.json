@@ -35,16 +35,14 @@
                     "command": "xdg-open"
                 }
             },
-            "justMyCode": false,
-            "symbolPath": ["/Temp/Sym"]
+            "justMyCode": false
         },
         {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach",
             "processName": "dotnet",
-            "justMyCode": false,
-            "symbolPath": ["/Temp/Sym"]
+            "justMyCode": false
         }
     ]
 }
