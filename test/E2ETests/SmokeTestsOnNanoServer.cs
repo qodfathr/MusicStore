@@ -13,68 +13,67 @@ using Xunit.Abstractions;
 
 namespace E2ETests
 {
-    // Some of the tests here test portable app scenario, so we copy the dotnet runtime onto the
+    public class SmokeTestsOnNanoServerUsingStandaloneRuntime : IDisposable
+    {
+        private readonly SmokeTestsOnNanoServer _smokeTestsOnNanoServer;
+        private readonly XunitLogger _logger;
+        private readonly RemoteDeploymentConfig _remoteDeploymentConfig;
+
+        public SmokeTestsOnNanoServerUsingStandaloneRuntime(ITestOutputHelper output)
+        {
+            _logger = new XunitLogger(output, LogLevel.Information);
+            _remoteDeploymentConfig = RemoteDeploymentConfigHelper.GetConfiguration();
+            _smokeTestsOnNanoServer = new SmokeTestsOnNanoServer(output, _remoteDeploymentConfig, _logger);
+        }
+
+        [ConditionalTheory, Trait("E2Etests", "NanoServer")]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [SkipIfEnvironmentVariableNotEnabled("RUN_TESTS_ON_NANO")]
+        [InlineData(ServerType.Kestrel, 5000, ApplicationType.Standalone)]
+        [InlineData(ServerType.WebListener, 5000, ApplicationType.Standalone)]
+        public async Task Test(ServerType serverType, int portToListen, ApplicationType applicationType)
+        {
+            var applicationBaseUrl = $"http://{_remoteDeploymentConfig.ServerName}:{portToListen}/";
+            await _smokeTestsOnNanoServer.RunTestsAsync(serverType, applicationBaseUrl, applicationType);
+        }
+
+        public void Dispose()
+        {
+            _logger.Dispose();
+        }
+    }
+
+    // Tests here test portable app scenario, so we copy the dotnet runtime onto the
     // target server's file share and after setting up a remote session to the server, we update the PATH environment
     // to have the path to this copied dotnet runtime folder in the share.
     // The dotnet runtime is copied only once for all the tests in this class.
-    public class SmokeTestsOnNanoServer : IClassFixture<SmokeTestsOnNanoServer.DotnetRuntimeSetupTestFixture>
+    public class SmokeTestsOnNanoServerUsingSharedRuntime
+        : IClassFixture<SmokeTestsOnNanoServerUsingSharedRuntime.DotnetRuntimeSetupTestFixture>, IDisposable
     {
+        private readonly SmokeTestsOnNanoServer _smokeTestsOnNanoServer;
+        private readonly RemoteDeploymentConfig _remoteDeploymentConfig;
         private readonly XunitLogger _logger;
-        private readonly DotnetRuntimeSetupTestFixture _dotnetRuntimeSetupInfo;
 
-        public SmokeTestsOnNanoServer(DotnetRuntimeSetupTestFixture dotnetRuntimeSetupTestFixture, ITestOutputHelper output)
+        public SmokeTestsOnNanoServerUsingSharedRuntime(
+            DotnetRuntimeSetupTestFixture dotnetRuntimeSetupTestFixture, ITestOutputHelper output)
         {
             _logger = new XunitLogger(output, LogLevel.Information);
-
-            _dotnetRuntimeSetupInfo = dotnetRuntimeSetupTestFixture;
-            RemoteDeploymentConfig = _dotnetRuntimeSetupInfo.RemoteDeploymentConfig;
+            _remoteDeploymentConfig = RemoteDeploymentConfigHelper.GetConfiguration();
+            _remoteDeploymentConfig.DotnetRuntimePathOnShare = dotnetRuntimeSetupTestFixture.DotnetRuntimePathOnShare;
+            _smokeTestsOnNanoServer = new SmokeTestsOnNanoServer(output, _remoteDeploymentConfig, _logger);
         }
-
-        public RemoteDeploymentConfig RemoteDeploymentConfig { get; }
 
         [ConditionalTheory, Trait("E2Etests", "NanoServer")]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [SkipIfEnvironmentVariableNotEnabled("RUN_TESTS_ON_NANO")]
         [InlineData(ServerType.Kestrel, 5000, ApplicationType.Portable)]
-        [InlineData(ServerType.Kestrel, 5000, ApplicationType.Standalone)]
         [InlineData(ServerType.WebListener, 5000, ApplicationType.Portable)]
-        [InlineData(ServerType.WebListener, 5000, ApplicationType.Standalone)]
         public async Task Test(ServerType serverType, int portToListen, ApplicationType applicationType)
         {
-            var applicationBaseUrl = $"http://{RemoteDeploymentConfig.ServerName}:{portToListen}/";
-            await RunTestsAsync(serverType, applicationBaseUrl, applicationType);
-        }
-
-        private async Task RunTestsAsync(ServerType serverType, string applicationBaseUrl, ApplicationType applicationType)
-        {
-            using (_logger.BeginScope("SmokeTestSuite"))
-            {
-                var deploymentParameters = new RemoteWindowsDeploymentParameters(
-                    Helpers.GetApplicationPath(applicationType),
-                    _dotnetRuntimeSetupInfo.DotnetRuntimePathOnShare,
-                    serverType,
-                    RuntimeFlavor.CoreClr,
-                    RuntimeArchitecture.x64,
-                    RemoteDeploymentConfig.FileSharePath,
-                    RemoteDeploymentConfig.ServerName,
-                    RemoteDeploymentConfig.AccountName,
-                    RemoteDeploymentConfig.AccountPassword)
-                {
-                    TargetFramework = "netcoreapp1.0",
-                    ApplicationBaseUriHint = applicationBaseUrl,
-                    ApplicationType = applicationType
-                };
-                deploymentParameters.EnvironmentVariables.Add(
-                    new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "SocialTesting"));
-
-                using (var deployer = new RemoteWindowsDeployer(deploymentParameters, _logger))
-                {
-                    var deploymentResult = deployer.Deploy();
-
-                    await SmokeTestHelper.RunTestsAsync(deploymentResult, _logger);
-                }
-            }
+            var applicationBaseUrl = $"http://{_remoteDeploymentConfig.ServerName}:{portToListen}/";
+            await _smokeTestsOnNanoServer.RunTestsAsync(serverType, applicationBaseUrl, applicationType);
         }
 
         public void Dispose()
@@ -87,16 +86,7 @@ namespace E2ETests
         {
             public DotnetRuntimeSetupTestFixture()
             {
-                var configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("remoteDeploymentConfig.json")
-                    .AddUserSecrets()
-                    .AddEnvironmentVariables()
-                    .Build();
-
-                var remoteDeploymentConfig = new RemoteDeploymentConfig();
-                configuration.GetSection("NanoServer").Bind(remoteDeploymentConfig);
-                RemoteDeploymentConfig = remoteDeploymentConfig;
+                RemoteDeploymentConfig = RemoteDeploymentConfigHelper.GetConfiguration();
 
                 DotnetRuntimePathOnShare = Path.Combine(RemoteDeploymentConfig.FileSharePath, "dotnet");
 
@@ -218,6 +208,75 @@ namespace E2ETests
                         + ex.ToString());
                 }
             }
+        }
+    }
+
+    class SmokeTestsOnNanoServer
+    {
+        private readonly XunitLogger _logger;
+        private readonly RemoteDeploymentConfig _remoteDeploymentConfig;
+
+        public SmokeTestsOnNanoServer(ITestOutputHelper output, RemoteDeploymentConfig config, XunitLogger logger)
+        {
+            _logger = logger;
+            _remoteDeploymentConfig = config;
+        }
+
+        public async Task RunTestsAsync(
+            ServerType serverType,
+            string applicationBaseUrl,
+            ApplicationType applicationType)
+        {
+            using (_logger.BeginScope(nameof(SmokeTestsOnNanoServerUsingStandaloneRuntime)))
+            {
+                var deploymentParameters = new RemoteWindowsDeploymentParameters(
+                    Helpers.GetApplicationPath(applicationType),
+                    _remoteDeploymentConfig.DotnetRuntimePathOnShare,
+                    serverType,
+                    RuntimeFlavor.CoreClr,
+                    RuntimeArchitecture.x64,
+                    _remoteDeploymentConfig.FileSharePath,
+                    _remoteDeploymentConfig.ServerName,
+                    _remoteDeploymentConfig.AccountName,
+                    _remoteDeploymentConfig.AccountPassword)
+                {
+                    TargetFramework = "netcoreapp1.0",
+                    ApplicationBaseUriHint = applicationBaseUrl,
+                    ApplicationType = applicationType
+                };
+                deploymentParameters.EnvironmentVariables.Add(
+                    new KeyValuePair<string, string>("ASPNETCORE_ENVIRONMENT", "SocialTesting"));
+
+                using (var deployer = new RemoteWindowsDeployer(deploymentParameters, _logger))
+                {
+                    var deploymentResult = deployer.Deploy();
+
+                    await SmokeTestHelper.RunTestsAsync(deploymentResult, _logger);
+                }
+            }
+        }
+    }
+
+    static class RemoteDeploymentConfigHelper
+    {
+        private static RemoteDeploymentConfig _remoteDeploymentConfig;
+
+        public static RemoteDeploymentConfig GetConfiguration()
+        {
+            if (_remoteDeploymentConfig == null)
+            {
+                var configuration = new ConfigurationBuilder()
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("remoteDeploymentConfig.json")
+                        .AddUserSecrets()
+                        .AddEnvironmentVariables()
+                        .Build();
+
+                _remoteDeploymentConfig = new RemoteDeploymentConfig();
+                configuration.GetSection("NanoServer").Bind(_remoteDeploymentConfig);
+            }
+
+            return _remoteDeploymentConfig;
         }
     }
 }

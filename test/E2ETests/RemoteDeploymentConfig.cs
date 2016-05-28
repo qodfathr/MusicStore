@@ -34,5 +34,10 @@
         /// This property is probably more useful for users as they can point their local 'dotnet' runtime folder.
         /// </summary>
         public string DotnetRuntimeFolderPath { get; set; }
+
+        /// <summary>
+        /// Path to the parent folder containing 'dotnet.exe' on remote server's file share
+        /// </summary>
+        public string DotnetRuntimePathOnShare { get; set; }
     }
 }
