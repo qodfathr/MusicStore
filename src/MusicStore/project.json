@@ -5,6 +5,7 @@
   "description": "Music store application on ASP.NET 5",
   "version": "1.1.0-*",
   "buildOptions": {
+    "debugType": "portable",
     "compile": {
       "include": [
         "../../shared/**/*.cs"
