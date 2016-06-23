@@ -22,6 +22,10 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "Red Hat CDK": {
+      "executablePath": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "commandLineArgs": "-ExecutionPolicy Unrestricted .\\CRE.ps1 -Configuration $(Configuration)"
     }
   }
 }
