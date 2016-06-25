@@ -5,11 +5,15 @@
   },
   "DefaultAdminUsername": "Administrator@test.com",
   "DefaultAdminPassword": "YouShouldChangeThisPassword1!",
+  "DatabaseType" :  "mssql",
   "Data": {
     "DefaultConnection": {
       // Use a shared (and running) LocalDB database when executing in IIS e.g.
       // "Server=(localdb)\\.\\IIS_DB;Database=MusicStore;Trusted_Connection=False;MultipleActiveResultSets=true;User ID=iis_login;Password=********"
-      "ConnectionString": "Server=(localdb)\\MSSQLLocalDB;Database=MusicStore;Trusted_Connection=True;MultipleActiveResultSets=true;Connect Timeout=30;"
+      //"ConnectionString": "Server=(localdb)\\MSSQLLocalDB;Database=MusicStore;Trusted_Connection=True;MultipleActiveResultSets=true;Connect Timeout=30;"
+      //"ConnectionString": "Server=192.168.1.148;Database=MusicStore;User ID=sa;Password=sa;MultipleActiveResultSets=true;Connect Timeout=30;"
+      "ConnectionString": "Server=<dockerip>;Database=MusicStore;User ID=sa;Password=sa;MultipleActiveResultSets=true;Connect Timeout=30;"
+      //"ConnectionString": "Server=localhost4;Database=MusicStore;User ID=sa;Password=sa;MultipleActiveResultSets=true;Connect Timeout=30;"
     }
   }
 }

@@ -37,15 +37,23 @@ namespace MusicStore
             services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 
             // Add EF services to the services container
-            if (_platform.UseInMemoryStore)
+            var databaseType = Configuration["DatabaseType"];
+            if (string.IsNullOrEmpty(databaseType))
             {
-                services.AddDbContext<MusicStoreContext>(options =>
-                    options.UseInMemoryDatabase());
+                if (_platform.UseInMemoryStore) databaseType = "inmem";
+                else databaseType = "mssql";
             }
-            else
+            switch (databaseType)
             {
-                services.AddDbContext<MusicStoreContext>(options =>
-                    options.UseSqlServer(Configuration[StoreConfig.ConnectionStringKey.Replace("__", ":")]));
+                case "mssql":
+                    services.AddDbContext<MusicStoreContext>(options =>
+                        options.UseSqlServer(Configuration[StoreConfig.ConnectionStringKey.Replace("__", ":")]));
+                    break;
+                case "inmem":
+                default:
+                    services.AddDbContext<MusicStoreContext>(options =>
+                        options.UseInMemoryDatabase());
+                    break;
             }
 
             // Add Identity services to the services container
